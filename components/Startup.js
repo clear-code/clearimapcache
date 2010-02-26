@@ -73,29 +73,31 @@ clearimapcacheStartupService.prototype = {
 
 		if (!folder) return;
 
-		var children = folder.directoryEntries;
+		this.clearFilesIn(folder);
+	},
+
+	clearFilesIn : function(aFolder)
+	{
+		var children = aFolder.directoryEntries;
+		var shouldRemove = [];
 		while (children.hasMoreElements())
 		{
 			let file = children.getNext().QueryInterface(Ci.nsILocalFile);
 			if (file.isDirectory()) {
-				let children = file.directoryEntries;
-				while (children.hasMoreElements())
-				{
-					let file = children.getNext().QueryInterface(Ci.nsILocalFile);
-					if (this.exceptions.indexOf(file.leafName) > -1)
-						continue;
-					file.remove(true);
-				}
+				this.clearFilesIn(file);
 			}
 			else {
-				file.remove(true);
+				if (this.exceptions.test(file.leafName))
+					continue;
+				shouldRemove.push(file);
 			}
 		}
+		shouldRemove.forEach(function(aFile) {
+			aFile.remove(true);
+		});
 	},
 
-	exceptions : [
-		'msgFilterRules.dat'
-	],
+	exceptions : /(?:^msgFilterRules.dat$|\.msf$)/i,
 
 	Prefs : Cc['@mozilla.org/preferences;1']
 				.getService(Ci.nsIPrefBranch)
