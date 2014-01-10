@@ -14,9 +14,9 @@ const ObserverService = Cc['@mozilla.org/observer-service;1']
 const DirectoryService = Cc['@mozilla.org/file/directory_service;1']
 		.getService(Ci.nsIProperties);
 
-function clearimapcacheStartupService() { 
+function ClearimapcacheStartupService() { 
 }
-clearimapcacheStartupService.prototype = {
+ClearimapcacheStartupService.prototype = {
 	 
 	observe : function(aSubject, aTopic, aData) 
 	{
@@ -148,11 +148,9 @@ clearimapcacheStartupService.prototype = {
 	_xpcom_categories : [
 		{ category : 'app-startup', service : true }
 	]
- 
 }; 
 
-function NSGetModule(aCompMgr, aFileSpec)
-{
-	return XPCOMUtils.generateModule([clearimapcacheStartupService]);
-}
-
+if (XPCOMUtils.generateNSGetFactory) // Gecko 2.0 or later
+	var NSGetFactory = XPCOMUtils.generateNSGetFactory([ClearimapcacheStartupService]);
+else // Gecko 1.9.x
+	var NSGetModule = XPCOMUtils.generateNSGetModule([ClearimapcacheStartupService]);
