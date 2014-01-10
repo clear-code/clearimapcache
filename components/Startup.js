@@ -6,7 +6,7 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 
 const kCID  = Components.ID('{1e2fc340-a29f-11de-8a39-0800200c9a66}'); 
 const kID   = '@clear-code.com/clearimapcache/startup;1';
-const kNAME = "Clear IMAP Local Cache Service";
+const kNAME = 'ClearIMAPLocalCacheService';
 
 const ObserverService = Cc['@mozilla.org/observer-service;1']
 		.getService(Ci.nsIObserverService);
@@ -27,7 +27,19 @@ ClearimapcacheStartupService.prototype = {
 				return;
 
 			case 'profile-after-change':
-				ObserverService.removeObserver(this, 'profile-after-change');
+				try {
+					ObserverService.removeObserver(this, 'profile-after-change');
+				}
+				catch(e) {
+					// fails on Gecko 2.0 or later
+				}
+				ObserverService.addObserver(this, 'profile-change-teardown', false);
+				if (this.getPref('extensions.clearimapcache.enabled') !== false)
+					this.clear();
+				return;
+
+			case 'profile-change-teardown':
+				ObserverService.removeObserver(this, 'profile-change-teardown');
 				if (this.getPref('extensions.clearimapcache.enabled') !== false)
 					this.clear();
 				return;
