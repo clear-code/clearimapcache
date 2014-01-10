@@ -1,8 +1,7 @@
 #!/bin/sh
 
-appname=${0##*/}
-appname=${appname%.sh}
+appname=clearimapcache
 
-cp buildscript/make_new.sh ./
-./make_new.sh $appname version=1
-rm ./make_new.sh
+cp buildscript/makexpi.sh ./
+./makexpi.sh -n $appname -o
+rm ./makexpi.sh
