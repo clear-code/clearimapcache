@@ -104,25 +104,28 @@ ClearimapcacheStartupService.prototype = {
 	clearFilesIn : function(aFolder)
 	{
 		var children = aFolder.directoryEntries;
-		var shouldRemove = [];
 		while (children.hasMoreElements())
 		{
 			let file = children.getNext().QueryInterface(Ci.nsILocalFile);
 			if (file.isDirectory()) {
 				this.clearFilesIn(file);
+				if (/\.sbd$/i.test(file.leafName) &&
+					!file.directoryEntries.hasMoreElements())
+					file.remove(true);
 			}
 			else {
-				if (this.exceptions.test(file.leafName))
+				if (
+					/^msgFilterRules\.dat$/i.test(file.leafName) ||
+					(
+						/\.msf$/i.test(file.leafName) &&
+						this.getPref('extensions.clearimapcache.clear.summary') !== true
+					)
+					)
 					continue;
-				shouldRemove.push(file);
+				file.remove(true);
 			}
 		}
-		shouldRemove.forEach(function(aFile) {
-			aFile.remove(true);
-		});
 	},
-
-	exceptions : /(?:^msgFilterRules.dat$|\.msf$)/i,
 
 	clearCache : function()
 	{
