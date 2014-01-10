@@ -11,6 +11,9 @@ const kNAME = "Clear IMAP Local Cache Service";
 const ObserverService = Cc['@mozilla.org/observer-service;1']
 		.getService(Ci.nsIObserverService);
 
+const DirectoryService = Cc['@mozilla.org/file/directory_service;1']
+		.getService(Ci.nsIProperties);
+
 function clearimapcacheStartupService() { 
 }
 clearimapcacheStartupService.prototype = {
@@ -33,6 +36,13 @@ clearimapcacheStartupService.prototype = {
  
 	clear : function() 
 	{
+		var IMAPMail = this.getIMAPMailFolder();
+		if (IMAPMail && IMAPMail.exists())
+			this.clearFilesIn(IMAPMail);
+	},
+ 
+	getIMAPMailFolder : function()
+	{
 		var root = this.getPref('mail.root.imap');
 		var folder = Cc['@mozilla.org/file/local;1']
 						.createInstance(Ci.nsILocalFile);
@@ -54,10 +64,10 @@ clearimapcacheStartupService.prototype = {
 					return '';
 				});
 				if (keyword) {
-					folder = Cc['@mozilla.org/file/directory_service;1']
-							.getService(Ci.nsIProperties)
+					folder = DirectoryService
 							.get(keyword, Ci.nsIFile)
 							.QueryInterface(Ci.nsILocalFile);
+
 					folder.appendRelativePath(root);
 					if (!folder.exists())
 						folder = null;
@@ -70,10 +80,7 @@ clearimapcacheStartupService.prototype = {
 				folder = null;
 			}
 		}
-
-		if (!folder) return;
-
-		this.clearFilesIn(folder);
+		return folder;
 	},
 
 	clearFilesIn : function(aFolder)
