@@ -129,12 +129,20 @@ ClearimapcacheStartupService.prototype = {
 
 	clearCache : function()
 	{
-		var CacheStorageService = Cc['@mozilla.org/netwerk/cache-storage-service;1']
-									.getService(Ci.nsICacheStorageService);
 		try {
+			var CacheStorageService = Cc['@mozilla.org/netwerk/cache-storage-service;1']
+										.getService(Ci.nsICacheStorageService);
 			CacheStorageService.clear();
 		}
 		catch(e) {
+			// for Thunderbird 24 or olders
+			var CacheService = Cc['@mozilla.org/network/cache-service;1']
+								.getService(Ci.nsICacheService);
+			try {
+				CacheService.evictEntries(Ci.nsICache.STORE_ANYWHERE);
+			}
+			catch(e) {
+			}
 		}
 	},
 
