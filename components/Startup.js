@@ -37,29 +37,52 @@ ClearimapcacheStartupService.prototype = {
 				catch(e) {
 					// fails on Gecko 2.0 or later
 				}
-				ObserverService.addObserver(this, 'profile-change-teardown', false);
-				if (this.getPref('extensions.clearimapcache.enabled') !== false)
-					this.clear();
+				ObserverService.addObserver(this, 'quit-application', false);
+				ObserverService.addObserver(this, 'xpcom-will-shutdown', false);
+				this.clearAll();
 				return;
 
-			case 'profile-change-teardown':
-				ObserverService.removeObserver(this, 'profile-change-teardown');
-				if (this.getPref('extensions.clearimapcache.enabled') !== false)
-					this.clear();
+			case 'quit-application':
+				ObserverService.removeObserver(this, 'quit-application');
+				// cahce profile data for post process
+				this.shouldClearSummary = this.getPref('extensions.clearimapcache.clear.summary');
+				this.getIMAPMailFolder();
+				if (this.getPref('extensions.clearimapcache.enabled'))
+					this.clearCache();
+				return;
+
+			case 'xpcom-will-shutdown':
+				ObserverService.removeObserver(this, 'xpcom-will-shutdown');
+				if (this.getPref('extensions.clearimapcache.enabled'))
+					this.clearIMAPMails();
 				return;
 		}
 	},
  
-	clear : function() 
+	clearAll : function() 
+	{
+		this.clearIMAPMails();
+		this.clearCache();
+	},
+ 
+	clearIMAPMails : function() 
 	{
 		var IMAPMail = this.getIMAPMailFolder();
 		if (IMAPMail && IMAPMail.exists())
 			this.clearFilesIn(IMAPMail);
-
-		this.clearCache();
 	},
- 
 	getIMAPMailFolder : function()
+	{
+		try {
+			var folder = this.getIMAPMailFolderInternal();
+			if (folder)
+				this._IMAPMailFolder = folder;
+		}
+		catch(e) {
+		}
+		return this._IMAPMailFolder;
+	},
+	getIMAPMailFolderInternal : function()
 	{
 		var root = this.getPref('mail.root.imap');
 		var folder = Cc['@mozilla.org/file/local;1']
@@ -98,6 +121,7 @@ ClearimapcacheStartupService.prototype = {
 				folder = null;
 			}
 		}
+
 		return folder;
 	},
 
@@ -111,19 +135,29 @@ ClearimapcacheStartupService.prototype = {
 				this.clearFilesIn(file);
 				if (/\.sbd$/i.test(file.leafName) &&
 					!file.directoryEntries.hasMoreElements())
-					file.remove(true);
+					this.clearFile(file);
 			}
 			else {
 				if (
 					/^msgFilterRules\.dat$/i.test(file.leafName) ||
 					(
 						/\.msf$/i.test(file.leafName) &&
-						this.getPref('extensions.clearimapcache.clear.summary') !== true
+						!this.shouldClearSummary
 					)
 					)
 					continue;
-				file.remove(true);
+				this.clearFile(file);
 			}
+		}
+	},
+	clearFile : function(aFile)
+	{
+		try {
+			aFile.remove(true);
+		}
+		catch(e) {
+//			dump('cannot clear ' + aFile.path + '\n');
+//			dump(e + '\n');
 		}
 	},
 
@@ -135,6 +169,7 @@ ClearimapcacheStartupService.prototype = {
 			CacheStorageService.clear();
 		}
 		catch(e) {
+//			dump(e + '\n');
 			// for Thunderbird 24 or olders
 			var CacheService = Cc['@mozilla.org/network/cache-service;1']
 								.getService(Ci.nsICacheService);
@@ -142,6 +177,7 @@ ClearimapcacheStartupService.prototype = {
 				CacheService.evictEntries(Ci.nsICache.STORE_ANYWHERE);
 			}
 			catch(e) {
+//				dump(e + '\n');
 			}
 		}
 	},
