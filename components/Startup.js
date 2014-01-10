@@ -39,6 +39,8 @@ clearimapcacheStartupService.prototype = {
 		var IMAPMail = this.getIMAPMailFolder();
 		if (IMAPMail && IMAPMail.exists())
 			this.clearFilesIn(IMAPMail);
+
+		this.clearCache();
 	},
  
 	getIMAPMailFolder : function()
@@ -105,6 +107,17 @@ clearimapcacheStartupService.prototype = {
 	},
 
 	exceptions : /(?:^msgFilterRules.dat$|\.msf$)/i,
+
+	clearCache : function()
+	{
+		var CacheStorageService = Cc['@mozilla.org/netwerk/cache-storage-service;1']
+									.getService(Ci.nsICacheStorageService);
+		try {
+			CacheStorageService.clear();
+		}
+		catch(e) {
+		}
+	},
 
 	Prefs : Cc['@mozilla.org/preferences;1']
 				.getService(Ci.nsIPrefBranch)
