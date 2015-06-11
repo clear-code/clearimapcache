@@ -5,7 +5,7 @@
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="clearimapcache@clear-code.com"
                    em:name="Clear IMAP Local Cache"
-                   em:version="1.0"
+                   em:version="1.1"
                    em:type="2"
                    em:description="Clears IMAP local cache on startup."
                    em:creator="ClearCode Inc."
